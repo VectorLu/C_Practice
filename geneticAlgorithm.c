@@ -114,5 +114,6 @@ void initiate()
 
 void evaluation(int flag)
 {
+    // 按 flag 的指示分别对父种群和子种群进行评估和排序
     
 }
