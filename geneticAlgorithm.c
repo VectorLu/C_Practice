@@ -218,3 +218,88 @@ void cross()
         }
     }
 }
+
+
+/*
+selection() 函数从父代种群 gen_group 和子代种群 gen_new 中选择
+最优的染色体组成新的父代种群。由于两个种群都已进行了排序，因此只需找到子代种群中
+第 t 个个体使其适应度函数值满足下列条件：
+大于父代种群中的第 NUM-t 个个体，并小于父代种群中的第 NUM-t+1 个个体，
+然后用子代种群中的前 t 个个体代替父代种群中的后 t 个个体即可。
+为了加快对 t 的寻找速度，从两个种群的中部开始比较。
+*/
+void selection()
+{
+    int i, j, k;
+    j = 0;
+    i = SUM/2 - 1;
+    if (gen_group[i].suitability < gen_new[i].suitability)
+    {
+        for (j = 1; j < SUM/2; j++)
+        {
+            if (gen_group[i+j].suitability > gen_new[i-j].suitability)
+            {break;}
+        }
+    }
+    else
+    {
+        if (gen_group[i].suitability > gen_new[i].suitability)
+        {
+            for ( j = -1; j < -SUM/2; j--)
+            {
+                if (gen_group[i+j].suitability <= gen_new[i-j].suitability)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    
+    for ( k = j; k < SUM/2 + 1; k++)
+    {
+        gen_group[i+k].info = gen_new[i-k].info;
+        gen_group[i+k].suitability = gen_new[i-k].suitability;
+    }
+}
+
+/*
+record() 函数主要完成两个任务：
+1. 用链表记录各轮循环中的最优值
+2. 判断是否满足循环停止条件
+*/
+int record()
+{
+    float x;
+    T_LOG *r;
+    r = (T_LOG *) malloc(sizeof(list_log));
+    if (r == NULL)
+    {
+        printf("\n内存不够！\n");
+        exit(0);
+    }
+    r->next = NULL;
+    // 记录各轮循环中的最优值
+    end->suitability = gen_group[0].suitability;
+    // TODO: 下面这行可能有印刷错误
+    end->next = r;
+    log_num++;
+
+    // 下面部分判断是否满足循环停止条件 1
+    x = gen_result.suitability - gen_group[0].suitability;
+    if (x < 0) {x = -x;}
+    if (x < ERROR)
+    {
+        result_unchange_time++;
+        if (result_unchange_time >= 20)
+        {
+            return 1;
+        }
+    }
+    else
+    {
+        gen_result.info = gen_group[0].info;
+        gen_result.suitability = gen_group[0].suitability;
+        result_unchange_time = 0;
+    }
+    return 0;
+}
