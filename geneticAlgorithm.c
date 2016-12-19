@@ -11,7 +11,7 @@ y = x^6 - 10x^5 - 26x^4 + 344x^3 + 193x^2 - 1846x - 1680
 #define MAX_LOOP 1200 // 最大循环次数
 #define ERROR 0.01 // 若两次最优值之差小于此数则认为结果没有改变
 #define CROSS_P 0.7 // 交叉概率，所选中的双亲按此概率进行交叉
-#define MP 0.04    // 变异概率
+#define MUTATION_P 0.04    // 变异概率
 
 typedef struct gen // 定义染色体结构
 {
@@ -265,7 +265,10 @@ void selection()
 /*
 record() 函数主要完成两个任务：
 1. 用链表记录各轮循环中的最优值
-2. 判断是否满足循环停止条件，
+2. 判断是否满足循环停止条件，当两次循环的适应度值的差 < ERROR 时， 
+result_unchange_time 的值加 1，若 result_unchange_time 达到 20 时表示已经
+搜索到最优值，返回 1；若适应度的差 >= ERROR 时，则将 result_unchange_time 清零，
+并记录本轮最优值，函数返回 0。
 */
 int record()
 {
@@ -302,4 +305,87 @@ int record()
         result_unchange_time = 0;
     }
     return 0;
+}
+
+/*
+先以 cmp 概率确定将要发生变异的染色体，
+再从这个染色体中随机选取一个基因进行变异。
+由于进行选择和变异后父代种群的次序已被打乱，
+因此在进行变异后对种群进行了一次排序。
+*/
+void mutation()
+{
+    int i, j, m;
+    int gen_info;
+    float x;
+    float cmp;
+    float gen_suitability;
+
+    // 基因变异概率为 MUTATION_P 时染色体中有基因发生变异的概率
+    cmp = 1 - pow(1 - MUTATION_P, 11);
+
+    for ( i = 0; i < SUM; i++)
+    {
+        if (rand_sign(cmp) == 1)
+        {
+            j = rand_between(0, 14);
+            m = 1 << j;
+            gen_group[i].info = gen_group[i].info^m;
+            x = b2d(gen_group[i].info);
+
+            x = x * ( x * ( x * ( x * ( x * (x-10)-26 ) + 344 ) + 193 ) - 1846) - 1680;
+            gen_group[i].suitability = x;
+        }
+    }
+
+    for ( i = 0; i < SUM-1; i++)
+    {
+        for (j = i+1; j < SUM; j++)
+        {
+            if (gen_group[i].suitability > gen_group[j].suitability)
+            {
+                gen_info = gen_group[i].info;
+                gen_group[i].info = gen_group[j].info;
+                gen_group[j].info = gen_info;
+
+                gen_suitability = gen_group[i].suitability;
+                gen_group[i].suitability = gen_group[j].suitability;
+                gen_group[j].suitability = gen_suitability;
+            }
+        }
+    }
+}
+
+
+void show_result(int flag)
+{
+    // 显示搜索结果并释放内存
+    int i, j;
+    T_LOG *log_free;
+    FILE *log_file;
+    if (flag == 0)
+    {
+        printf("已到最大搜索次数，搜索失败！");
+    }
+    else
+    {
+        printf("当取值%f时表达式达到最小值为%f\n", b2d(gen_result.info),
+                gen_result.suitability);
+
+        printf("收敛过程记录于文件 log.txt");
+        if ((log_file = fopen("log.txt", "w+")) == NULL)
+        {
+            printf("Cannot create/open file.");
+            exit(1);
+        }
+
+        // 对收敛过程进行显示
+        for ( i = 0; i < log_num; i+=5)
+        {
+            for (j = 0; (j<5) || ((i+j) < log_num-1); j++)
+            {
+                fprintf(log_file, "%20f", )
+            }
+        }
+    }
 }
