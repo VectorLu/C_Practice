@@ -159,6 +159,17 @@ void evaluation(int flag)
     }
 }
 
+/*
+1. 随机选择将要进行交叉的染色体对，
+保证种群的每一个染色体都仅有唯一一次交叉的机会；
+2. 按 CROSS_P 的概率对选择的染色体对进行交叉操作；
+3. 未进行交叉的染色体直接复制作为子染色体。
+
+在第 2 部分首先由 rand_between() 选择交叉位，
+create_mask() 返回一个交叉位以右皆为 1 的二进制数，赋给 mask1;
+mask2 为交叉位以左皆为 1 的二进制数，它们分别与父染色体 gen_group[i].info、
+gen_group[j].info 进行与操作，所得的结果之和即为交叉的结果
+*/
 void cross()
 {
     // 对父种群按概率 CROSS_P 进行交叉操作
@@ -188,8 +199,22 @@ void cross()
             {
                 mask1 = create_mask(rand_between(0, 14));
                 mask2 = -mask1;
-                gen_new[k].info
+
+                gen_new[k].info = 
+                (gen_group[i].info)&mask1 + (gen_group[j].info)&mask2;
+
+                gen_new[k+1].info = 
+                (gen_group[i].info)&mask2 + (gen_group[j].info)&mask1;
+
+                k += 2;
             }
+            else
+            {
+                gen_new[k].info = gen_group[i].info;
+                gen_new[k+1].info = gen_group[j].info;
+                k += 2;
+            }
+            a[i] = a[j] = 1;
         }
     }
 }
