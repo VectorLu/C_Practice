@@ -2,16 +2,15 @@
 y = x^6 - 10x^5 - 26x^4 + 344x^3 + 193x^2 - 1846x - 1680
 要求在 ( -8, +8 ) 间寻找使表达式达到最小值的 x，误差为 0.001
 */
-
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <time.h>
 
 #define SUM 20        // 定义群体的染色体数量
 #define MAX_LOOP 1200 // 最大循环次数
 #define ERROR 0.01 // 若两次最优值之差小于此数则认为结果没有改变
-#define CROSSP 0.7 // 交叉概率，所选中的双亲按此概率进行交叉
+#define CROSS_P 0.7 // 交叉概率，所选中的双亲按此概率进行交叉
 #define MP 0.04    // 变异概率
 
 typedef struct gen // 定义染色体结构
@@ -46,7 +45,7 @@ void mutation();       // 变异函数
 void show_result(int); // 显示结果
 /********* 以上函数由主函数直接调用 *****/
 int rand_sign(float p); // 按概率 p 产生随机数 0, 1，其值为 1 的概率为 p
-int rand_bit(int i, int j); // 随机产生一个在 i, j 两个数之间的整数
+int rand_between(int i, int j); // 随机产生一个在 i, j 两个数之间的整数
 int rand_gen(); // 随机产生一个由 14 个基因组成的染色体
 int create_mask(int a); // 用于交叉操作
 int d2b(float x);   // 对现实解空间的可能解 x 进行二进制编码（染色体形式）
@@ -115,5 +114,82 @@ void initiate()
 void evaluation(int flag)
 {
     // 按 flag 的指示分别对父种群和子种群进行评估和排序
+    int i, j;
+    T_GEN *gen_p;
+
+    // 临时变量用于交换
+    int gen_info;
+    float gen_suitability;
+    float x;
+
+    // 如果 flag 为 0，对父种群进行操作
+    if (flag == 0)
+    {
+        gen_p = gen_group;
+    }
+    // 否则对子种群进行操作
+    else
+    {
+        gen_p = gen_new;
+    }
+
+    // 计算各染色体对应的适应度
+    for (i = 0; i < SUM; i++)
+    {
+        x = b2d(gen_p[i].info);
+        gen_p[i].suitability = 
+        x * ( x * ( x * ( x * ( x * (x-10)-26 ) + 344 ) + 193 ) - 1846) - 1680;
+    }
+
+    for (i = 0; i < SUM-1; i++)
+    {
+        // 按照适应度的大小进行排序
+        for (j = i+1; j < SUM; j++)
+        {
+            if (gen_p[i].suitability > gen_p[j].suitability)
+            {
+                gen_info = gen_p[i].info;
+                gen_p[i].info = gen_p[j].info;
+                gen_p[j].info = gen_info;
+                gen_suitability = gen_p[i].suitability;
+                gen_p[i].suitability = gen_p[j].suitability;
+                gen_p[j].suitability = gen_suitability;
+            }
+        }
+    }
+}
+
+void cross()
+{
+    // 对父种群按概率 CROSS_P 进行交叉操作
+    int i, j, k;
+    k = 0;
+    int mask1, mask2;
+    int a[SUM];
+    for ( i = 0; i < SUM; i++)
+    {
+        a[i] = 0;
+    }
     
+    for (i = 0; i < SUM; i++)
+    {
+        if (a[i] == 0)
+        {
+            for( ; ; )
+            {
+                // 随机找到一组未进行过交叉的染色体与 a[i] 交叉
+                j = rand_between(i+1, SUM-1);
+                if (a[j] == 0)
+                {
+                    break;  
+                }
+            }
+            if (rand_sign(CROSS_P) == 1)
+            {
+                mask1 = create_mask(rand_between(0, 14));
+                mask2 = -mask1;
+                gen_new[k].info
+            }
+        }
+    }
 }
